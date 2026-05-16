@@ -1,0 +1,40 @@
+{% if run %}
+<div class="run-detail-header">
+    <h2>
+        <span class="badge badge-{{ run.status }}">{{ run.status }} ({{ run.status_code }})</span>
+        {{ run.mode }}
+        {% if run.label %} — {{ run.label }}{% endif %}
+    </h2>
+    {% if run.description %}<p class="muted">{{ run.description }}</p>{% endif %}
+    <div class="run-stats">
+        <span>Total: {{ run.total_items }}</span>
+        <span class="text-success">OK: {{ run.succeeded }}</span>
+        <span class="text-danger">Failed: {{ run.failed }}</span>
+        <span class="text-warning">Rejected: {{ run.rejected }}</span>
+        <span>Started: {{ run.started_at[:19] if run.started_at else '-' }}</span>
+        {% if run.finished_at %}<span>Finished: {{ run.finished_at[:19] }}</span>{% endif %}
+    </div>
+</div>
+
+{% if items %}
+<h3>Items</h3>
+<table class="table">
+    <thead>
+        <tr><th>Repo</th><th>Status</th><th>Error</th><th>Started</th><th>Finished</th></tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.repo_full_name }}</td>
+            <td><span class="badge badge-{{ item.status }}">{{ item.status }} ({{ item.status_code }})</span></td>
+            <td>{{ item.error_message or '-' }}</td>
+            <td>{{ item.started_at[:19] if item.started_at else '-' }}</td>
+            <td>{{ item.finished_at[:19] if item.finished_at else '-' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% else %}
+<p class="muted">Run not found.</p>
+{% endif %}

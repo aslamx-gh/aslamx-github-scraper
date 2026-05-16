@@ -1,0 +1,19 @@
+niche_id: python-web-frameworks
+title: Python Web Frameworks
+description: Popular and emerging Python web frameworks and related tooling
+languages:
+  - Python
+github_search_queries:
+  - "python web framework"
+  - "python async web framework"
+  - "python REST API framework"
+github_topics:
+  - python
+  - web-framework
+  - fastapi
+  - flask
+  - django
+min_stars: 50
+max_repo_size_kb: 512000
+min_recent_activity_days: 180
+exclude_forks: true

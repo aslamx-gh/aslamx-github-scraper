@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Cart — GitHub Cloner V1{% endblock %}
+{% block content %}
+<h1>Cart / Shortlist</h1>
+
+<div id="cart-action-msg" class="msg"></div>
+
+{% if items %}
+<section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <p><strong>{{ count }} repo{% if count != 1 %}s{% endif %}</strong> in cart</p>
+        <div style="display:flex;gap:0.75rem;">
+            <button class="btn btn-primary" onclick="cloneFromCart()">Clone All ({{ count }})</button>
+            <button class="btn btn-secondary" onclick="clearCart()">Clear Cart</button>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Repository</th>
+                <th>Language</th>
+                <th>Stars</th>
+                <th>License</th>
+                <th>Quality</th>
+                <th>Size</th>
+                <th>Last Push</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>
+                    <a href="{{ item.source_url or 'https://github.com/' ~ item.full_name }}" target="_blank">{{ item.full_name }}</a>
+                    {% if item.is_fork %}<span class="badge badge-warn" title="Fork">fork</span>{% endif %}
+                    {% if item.is_archived %}<span class="badge badge-warn" title="Archived">archived</span>{% endif %}
+                    {% if not item.license %}<span class="badge badge-danger" title="No license detected">no license</span>{% endif %}
+                    {% if item.description %}<br><small class="muted">{{ item.description[:100] }}{% if item.description|length > 100 %}…{% endif %}</small>{% endif %}
+                </td>
+                <td>{{ item.language or '—' }}</td>
+                <td>{{ item.stars or 0 }}</td>
+                <td>{{ item.license or '—' }}</td>
+                <td>
+                    {% if item.quality_score is not none %}
+                        {% if item.quality_score >= 0.7 %}
+                            <span class="badge badge-success" title="{{ '%.2f'|format(item.quality_score) }}">High</span>
+                        {% elif item.quality_score >= 0.4 %}
+                            <span class="badge badge-warn" title="{{ '%.2f'|format(item.quality_score) }}">Medium</span>
+                        {% else %}
+                            <span class="badge badge-danger" title="{{ '%.2f'|format(item.quality_score) }}">Low</span>
+                        {% endif %}
+                    {% else %}—{% endif %}
+                </td>
+                <td>{{ item.size_kb or 0 }} KB</td>
+                <td>{{ item.last_pushed_at[:10] if item.last_pushed_at else '—' }}</td>
+                <td>
+                    <button class="btn btn-sm" onclick="removeFromCart({{ item.item_id }})">Remove</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% else %}
+<section class="card">
+    <p class="muted">Your cart is empty.</p>
+    <a href="/search" class="btn btn-primary" style="margin-top:0.5rem;">Search &amp; Discover repos</a>
+</section>
+{% endif %}
+{% endblock %}

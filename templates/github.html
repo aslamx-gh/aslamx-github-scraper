@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}GitHub Diagnostics — GitHub Cloner V1{% endblock %}
+{% block content %}
+<h1>GitHub Diagnostics</h1>
+
+<section class="card">
+    <button class="btn btn-primary" onclick="checkGitHub()">Check Connection</button>
+    <div id="github-status" class="status-panel">
+        <p class="muted">Click to check GitHub connectivity and authentication.</p>
+    </div>
+</section>
+{% endblock %}

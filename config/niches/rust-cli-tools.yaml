@@ -1,0 +1,17 @@
+niche_id: rust-cli-tools
+title: Rust CLI Tools
+description: Command-line utilities and frameworks written in Rust
+languages:
+  - Rust
+github_search_queries:
+  - "rust cli tool"
+  - "rust command line"
+  - "rust terminal utility"
+github_topics:
+  - rust
+  - cli
+  - command-line
+min_stars: 20
+max_repo_size_kb: 256000
+min_recent_activity_days: 365
+exclude_forks: true

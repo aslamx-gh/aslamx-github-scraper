@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Settings — GitHub Cloner V1{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+
+<section class="card">
+    <form id="settings-form" onsubmit="saveSettings(event)">
+        <h2>Scheduler</h2>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="scheduler.global_enabled"
+                    {% if settings.get('scheduler.global_enabled') == 'true' %}checked{% endif %}>
+                Scheduler Globally Enabled
+            </label>
+        </div>
+
+        <h2>Filtering Defaults</h2>
+        <p class="muted" style="font-size:0.85em;">These defaults apply globally. Niche configs can override per-niche. Stricter filters = fewer but higher quality repos per run.</p>
+        <div class="form-group">
+            <label>Quick filter presets:</label>
+            <button type="button" class="btn btn-sm" onclick="applyFilterPreset('permissive')" title="Low bar — accepts most repos">Permissive</button>
+            <button type="button" class="btn btn-sm" onclick="applyFilterPreset('standard')" title="Balanced defaults — good for most runs">Standard</button>
+            <button type="button" class="btn btn-sm" onclick="applyFilterPreset('strict')" title="High quality bar — fewer but better repos">Strict</button>
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="filter.require_license"
+                    {% if settings.get('filter.require_license') == 'true' %}checked{% endif %}>
+                Require License
+            </label>
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="filter.exclude_forks"
+                    {% if settings.get('filter.exclude_forks') == 'true' %}checked{% endif %}>
+                Exclude Forks
+            </label>
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="filter.exclude_archived"
+                    {% if settings.get('filter.exclude_archived') == 'true' %}checked{% endif %}>
+                Exclude Archived
+            </label>
+        </div>
+        <div class="form-group">
+            <label>Max Repo Size (KB) <span class="muted" style="font-size:0.8em;">(100 MB = 102400, 500 MB = 512000)</span></label>
+            <input type="number" name="filter.max_repo_size_kb"
+                value="{{ settings.get('filter.max_repo_size_kb', '102400') }}">
+        </div>
+        <div class="form-group">
+            <label>Min Stars <span class="muted" style="font-size:0.8em;">(0 = any, 5 = basic signal, 50 = established)</span></label>
+            <input type="number" name="filter.min_stars"
+                value="{{ settings.get('filter.min_stars', '5') }}">
+        </div>
+        <div class="form-group">
+            <label>Min Recent Activity (days, 0 = disabled) <span class="muted" style="font-size:0.8em;">(365 = active last year)</span></label>
+            <input type="number" name="filter.min_recent_activity_days"
+                value="{{ settings.get('filter.min_recent_activity_days', '365') }}">
+        </div>
+
+        <h2>Discovery</h2>
+        <div class="form-group">
+            <label>Max Search Pages</label>
+            <input type="number" name="discovery.max_pages"
+                value="{{ settings.get('discovery.max_pages', '3') }}">
+        </div>
+
+        <h2>Log Retention</h2>
+        <div class="form-group">
+            <label>Retention Hours</label>
+            <input type="number" name="log.retention_hours"
+                value="{{ settings.get('log.retention_hours', '168') }}">
+        </div>
+        <div class="form-group">
+            <label>Quick presets:</label>
+            <button type="button" class="btn btn-sm" onclick="setRetention(1)">1h</button>
+            <button type="button" class="btn btn-sm" onclick="setRetention(10)">10h</button>
+            <button type="button" class="btn btn-sm" onclick="setRetention(24)">24h</button>
+            <button type="button" class="btn btn-sm" onclick="setRetention(168)">7d</button>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+        <div id="settings-result" class="msg"></div>
+    </form>
+</section>
+{% endblock %}

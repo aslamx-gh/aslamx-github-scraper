@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Validation — GitHub Cloner V1{% endblock %}
+{% block content %}
+<h1>Validation</h1>
+
+<section class="card">
+    <h2>Summary</h2>
+    <div class="run-stats" style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;">
+        <span>Total chunks: <strong>{{ summary.total_chunks }}</strong></span>
+        {% if summary.by_status.get('accepted') %}
+        <span class="badge badge-completed">accepted: {{ summary.by_status.accepted }}</span>
+        {% endif %}
+        {% if summary.by_status.get('quarantined') %}
+        <span class="badge badge-failed">quarantined: {{ summary.by_status.quarantined }}</span>
+        {% endif %}
+        {% if summary.by_status.get('pending') %}
+        <span class="badge badge-running">pending: {{ summary.by_status.pending }}</span>
+        {% endif %}
+    </div>
+
+    {% if summary.quarantine_by_reason %}
+    <div style="margin-top:1rem;">
+        <strong>Quarantine breakdown:</strong>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.5rem;">
+            {% for reason, cnt in summary.quarantine_by_reason.items() %}
+            <span>{{ reason }}: <strong>{{ cnt }}</strong></span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if summary.pending_chunks > 0 %}
+    <div style="margin-top:1rem;">
+        <button class="btn btn-primary" onclick="runValidation(this)">
+            Run Validation ({{ summary.pending_chunks }} pending chunks)
+        </button>
+        <span id="validation-msg" class="msg" style="margin-left:0.75rem;"></span>
+    </div>
+    {% else %}
+    <div style="margin-top:1rem;color:var(--text-muted);font-size:0.9rem;">
+        No pending chunks — all extracted chunks have been validated.
+    </div>
+    {% endif %}
+</section>
+
+<script>
+async function runValidation(btn) {
+    btn.disabled = true;
+    const msg = document.getElementById('validation-msg');
+    msg.textContent = 'Queuing…';
+    msg.style.color = 'var(--text-muted)';
+    try {
+        const res = await fetch('/api/validation/run', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'queued') {
+            msg.textContent = `Validation queued for ${data.pending_chunks} chunks. Refresh in a moment.`;
+            msg.style.color = 'var(--success)';
+        } else if (data.status === 'nothing_to_do') {
+            msg.textContent = 'No pending chunks found.';
+            msg.style.color = 'var(--text-muted)';
+            btn.disabled = false;
+        } else {
+            msg.textContent = JSON.stringify(data);
+            btn.disabled = false;
+        }
+    } catch (e) {
+        msg.textContent = 'Request failed: ' + e;
+        msg.style.color = 'var(--danger)';
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}

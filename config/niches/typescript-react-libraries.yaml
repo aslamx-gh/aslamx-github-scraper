@@ -1,0 +1,19 @@
+niche_id: typescript-react-libraries
+title: TypeScript React Libraries
+description: React component libraries and utilities written in TypeScript
+languages:
+  - TypeScript
+  - JavaScript
+github_search_queries:
+  - "react component library typescript"
+  - "react hooks typescript"
+  - "react ui library"
+github_topics:
+  - react
+  - typescript
+  - component-library
+  - ui-library
+min_stars: 30
+max_repo_size_kb: 512000
+min_recent_activity_days: 180
+exclude_forks: true

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — GitHub Cloner V1{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<section class="card">
+    <h2>Build Your Curated Batch</h2>
+    <p class="muted">Search GitHub for quality repos, review candidates, add them to your cart, then clone selectively.</p>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem;">
+        <a href="/search" class="btn btn-primary">Search &amp; Discover</a>
+        <a href="/cart" class="btn {% if cart_count %}btn-success{% else %}btn-secondary{% endif %}">
+            Cart{% if cart_count %} ({{ cart_count }}){% endif %}
+        </a>
+    </div>
+</section>
+
+<section class="card" id="runs-container"
+         hx-get="/partials/dashboard-runs" hx-trigger="every 5s" hx-swap="innerHTML">
+    {% include "partials/dashboard_runs.html" %}
+</section>
+
+<div id="dashboard-action-msg" class="msg"></div>
+
+<section class="card">
+    <h2>Manual Run <small class="muted" style="font-size:0.8em;font-weight:normal;">— bypass cart for quick one-off clones</small></h2>
+    <div class="run-form">
+        <div class="form-group">
+            <label>Mode</label>
+            <select id="run-mode" onchange="toggleRunInputs()">
+                <option value="manual_repo_list">Manual Repos</option>
+                <option value="niche_group">Niche Group</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Label (optional)</label>
+            <input type="text" id="run-label" placeholder="e.g. Weekly Python scan">
+        </div>
+        <div class="form-group">
+            <label>Description (optional)</label>
+            <input type="text" id="run-description" placeholder="Optional description">
+        </div>
+        <div id="manual-inputs" class="form-group">
+            <label>Repositories (one per line, owner/repo or URL)</label>
+            <textarea id="repo-inputs" rows="4" placeholder="owner/repo&#10;https://github.com/owner/repo"></textarea>
+        </div>
+        <div id="niche-inputs" class="form-group" style="display:none">
+            <label>Select Niches</label>
+            <div id="niche-checkboxes">Loading niches...</div>
+        </div>
+        <button class="btn btn-secondary" onclick="submitDashboardRun()">Start Manual Run</button>
+        <div id="run-result" class="msg"></div>
+    </div>
+</section>
+{% endblock %}

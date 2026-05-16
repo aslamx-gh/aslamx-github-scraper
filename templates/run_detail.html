@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Run #{{ run.run_id }} — GitHub Cloner V1{% endblock %}
+{% block content %}
+<h1>Run #{{ run.run_id }}</h1>
+
+<div class="run-actions">
+    {% if run.status in ['completed', 'failed'] %}
+        <button class="btn btn-primary btn-sm" onclick="retryRun({{ run.run_id }})">Retry</button>
+    {% endif %}
+    {% if run.status in ['completed', 'failed'] %}
+        <button class="btn btn-danger btn-sm" onclick="removeRun({{ run.run_id }})">Remove</button>
+    {% endif %}
+    <span id="action-msg" class="msg"></span>
+</div>
+
+{% set total = run.total_items or 0 %}
+{% set succeeded = run.succeeded or 0 %}
+{% set failed = run.failed or 0 %}
+{% set rejected = run.rejected or 0 %}
+{% set completion_pct = ((succeeded / total * 100) | int) if total > 0 else 0 %}
+<section class="card">
+    <h2>Performance</h2>
+    <div class="run-stats" style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;">
+        <span>Total: <strong>{{ total }}</strong></span>
+        <span class="text-success">Succeeded: <strong>{{ succeeded }}</strong></span>
+        <span class="text-danger">Failed: <strong>{{ failed }}</strong></span>
+        <span class="text-warning">Rejected: <strong>{{ rejected }}</strong></span>
+        {% if total > 0 %}
+        <span>Success rate: <strong>{{ completion_pct }}%</strong></span>
+        {% endif %}
+        {% if elapsed_seconds is not none %}
+        <span>Elapsed: <strong>
+            {% if elapsed_seconds < 60 %}{{ elapsed_seconds }}s
+            {% elif elapsed_seconds < 3600 %}{{ (elapsed_seconds // 60) }}m {{ (elapsed_seconds % 60) }}s
+            {% else %}{{ (elapsed_seconds // 3600) }}h {{ ((elapsed_seconds % 3600) // 60) }}m
+            {% endif %}
+        </strong></span>
+        {% endif %}
+        <span>Status: <span class="badge badge-{{ run.status }}">{{ run.status }} ({{ run.status_code }})</span></span>
+    </div>
+</section>
+
+<div class="card" id="run-status-container"
+     {% if run.status in ['searching', 'running'] %}
+     hx-get="/partials/run-status/{{ run.run_id }}" hx-trigger="every 3s" hx-swap="innerHTML"
+     {% endif %}>
+    {% include "partials/run_status.html" %}
+</div>
+
+{% if item_clone_paths %}
+<section class="card">
+    <h2>Cloned Repos ({{ item_clone_paths | length }})</h2>
+    <table class="table">
+        <thead>
+            <tr><th>Repo</th><th>Clone Path</th><th>Extraction</th><th>Chunks</th></tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            {% if item.item_id in item_clone_paths %}
+            {% set ext = item_extraction.get(item.item_id, {}) %}
+            <tr>
+                <td>{{ item.repo_full_name }}</td>
+                <td><code style="word-break:break-all;">{{ item_clone_paths[item.item_id] }}</code></td>
+                <td><span class="badge badge-{{ ext.extraction_status or 'pending' }}">{{ ext.extraction_status or 'pending' }}</span></td>
+                <td>{{ ext.chunk_count or 0 }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endif %}
+
+{% if rejections %}
+<section class="card">
+    <h2>Rejections ({{ rejections|length }})</h2>
+    <table class="table">
+        <thead>
+            <tr><th>Repo</th><th>Niche</th><th>Reason</th><th>Explanation</th><th>Time</th></tr>
+        </thead>
+        <tbody>
+            {% for r in rejections %}
+            <tr>
+                <td>{{ r.repo_full_name }}</td>
+                <td>{{ r.source_niche or '-' }}</td>
+                <td><code>{{ r.reason_code }}</code></td>
+                <td>{{ r.explanation }}</td>
+                <td>{{ r.created_at[:19] if r.created_at else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endif %}
+
+{% if failures %}
+<section class="card">
+    <h2>Failures ({{ failures|length }})</h2>
+    <table class="table">
+        <thead>
+            <tr><th>Repo</th><th>Type</th><th>Message</th><th>Retryable</th><th>Time</th></tr>
+        </thead>
+        <tbody>
+            {% for f in failures %}
+            <tr>
+                <td>{{ f.repo_full_name or '-' }}</td>
+                <td><code>{{ f.error_type }}</code></td>
+                <td>{{ f.error_message }}</td>
+                <td>{{ 'Yes' if f.is_retryable else 'No' }}</td>
+                <td>{{ f.created_at[:19] if f.created_at else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endif %}
+{% endblock %}

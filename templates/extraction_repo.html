@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}{{ repo.full_name }} — Extraction{% endblock %}
+{% block content %}
+<h1>{{ repo.full_name }} <small style="font-size:0.6em;color:var(--text-muted);">extraction</small></h1>
+
+<section class="card">
+    <div class="run-stats" style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;">
+        <span>Status: <span class="badge badge-{{ snapshot.extraction_status }}">{{ snapshot.extraction_status }}</span></span>
+        <span>Snapshot: <strong>{{ snapshot.snapshot_id }}</strong></span>
+        <span>Commit: <code>{{ snapshot.commit_sha[:10] }}</code></span>
+        <span>Chunks: <strong>{{ chunks | length }}</strong></span>
+        <span>Files inspected: <strong>{{ file_count }}</strong> ({{ included_count }} included)</span>
+    </div>
+    <div style="margin-top:1rem;">
+        <button class="btn btn-primary btn-sm" onclick="runExtraction({{ repo.repo_id }}, this)">Run Extraction</button>
+        <span id="extraction-msg" class="msg" style="margin-left:0.75rem;"></span>
+    </div>
+</section>
+
+{% if chunks %}
+<section class="card">
+    <h2>Chunks</h2>
+    <div style="margin-bottom:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <select id="filter-band" onchange="filterChunks()" style="padding:0.25rem 0.5rem;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;">
+            <option value="">All bands</option>
+            <option value="very-high">very-high</option>
+            <option value="high">high</option>
+            <option value="medium">medium</option>
+            <option value="small">small</option>
+        </select>
+        <select id="filter-tag" onchange="filterChunks()" style="padding:0.25rem 0.5rem;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;">
+            <option value="">All tags</option>
+            {% for tag in all_tags %}
+            <option value="{{ tag }}">{{ tag }}</option>
+            {% endfor %}
+        </select>
+        <input id="filter-sym" type="text" placeholder="Symbol / file filter…" oninput="filterChunks()"
+               style="padding:0.25rem 0.5rem;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;min-width:200px;">
+    </div>
+    <table class="table" id="chunk-table">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Symbol</th>
+                <th>File</th>
+                <th>Lines</th>
+                <th>Band</th>
+                <th>Tags</th>
+                <th>Lang</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in chunks %}
+            <tr data-band="{{ c.longevity_band }}" data-tags="{{ c.tags | join(',') }}" data-sym="{{ (c.symbol_name or '') | lower }}" data-file="{{ c.file_path | lower }}">
+                <td><code>{{ c.chunk_type }}</code></td>
+                <td>{{ c.symbol_name or '—' }}</td>
+                <td style="max-width:300px;word-break:break-all;font-size:0.8em;"><code>{{ c.file_path }}</code></td>
+                <td>{{ c.start_line }}–{{ c.end_line }}</td>
+                <td><span class="badge badge-{{ c.longevity_band }}">{{ c.longevity_band }}</span></td>
+                <td style="font-size:0.8em;">{{ c.tags | join(', ') }}</td>
+                <td>{{ c.language or '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p id="chunk-count-msg" style="color:var(--text-muted);font-size:0.85em;margin-top:0.5rem;"></p>
+</section>
+{% endif %}
+
+{% if skipped_files %}
+<section class="card">
+    <h2>Skipped Files ({{ skipped_files | length }})</h2>
+    <table class="table">
+        <thead><tr><th>Path</th><th>Reason</th></tr></thead>
+        <tbody>
+            {% for f in skipped_files %}
+            <tr>
+                <td style="font-size:0.85em;"><code>{{ f.relative_path }}</code></td>
+                <td><code>{{ f.skip_reason }}</code></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endif %}
+
+<script>
+async function runExtraction(repoId, btn) {
+    btn.disabled = true;
+    const msg = document.getElementById('extraction-msg');
+    msg.textContent = 'Queuing…';
+    msg.style.color = 'var(--text-muted)';
+    try {
+        const res = await fetch(`/api/repos/${repoId}/extraction/run`, { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'queued') {
+            msg.textContent = 'Extraction queued. Refresh in a moment.';
+            msg.style.color = 'var(--success)';
+            setTimeout(() => location.reload(), 4000);
+        } else if (data.detail) {
+            msg.textContent = 'Error: ' + data.detail;
+            msg.style.color = 'var(--danger)';
+            btn.disabled = false;
+        } else {
+            msg.textContent = JSON.stringify(data);
+            btn.disabled = false;
+        }
+    } catch (e) {
+        msg.textContent = 'Request failed: ' + e;
+        msg.style.color = 'var(--danger)';
+        btn.disabled = false;
+    }
+}
+
+function filterChunks() {
+    const band = document.getElementById('filter-band').value;
+    const tag  = document.getElementById('filter-tag').value;
+    const sym  = document.getElementById('filter-sym').value.toLowerCase();
+    const rows = document.querySelectorAll('#chunk-table tbody tr');
+    let shown = 0;
+    rows.forEach(r => {
+        const matchBand = !band || r.dataset.band === band;
+        const matchTag  = !tag  || r.dataset.tags.split(',').includes(tag);
+        const matchSym  = !sym  || r.dataset.sym.includes(sym) || r.dataset.file.includes(sym);
+        const visible = matchBand && matchTag && matchSym;
+        r.style.display = visible ? '' : 'none';
+        if (visible) shown++;
+    });
+    document.getElementById('chunk-count-msg').textContent = `Showing ${shown} of ${rows.length} chunks`;
+}
+filterChunks();
+</script>
+{% endblock %}

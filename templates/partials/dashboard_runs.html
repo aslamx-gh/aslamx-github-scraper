@@ -1,0 +1,57 @@
+{% if current_run %}
+<h2>Current Run</h2>
+<div class="run-summary">
+    <span class="badge badge-{{ current_run.status }}">{{ current_run.status }} ({{ current_run.status_code }})</span>
+    <span>Mode: {{ current_run.mode }}</span>
+    {% if current_run.label %}<span>{{ current_run.label }}</span>{% endif %}
+    <span>Items: {{ current_run.total_items }} | OK: {{ current_run.succeeded }} | Failed: {{ current_run.failed }} | Rejected: {{ current_run.rejected }}</span>
+    <a href="/runs/{{ current_run.run_id }}" class="btn btn-sm">Details</a>
+</div>
+{% else %}
+<h2>Current Run</h2>
+<p class="muted">No active runs. Start one from the New Run form above.</p>
+{% endif %}
+
+<h2>Recent Runs</h2>
+{% if recent_runs %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Mode</th>
+            <th>Label</th>
+            <th>Status</th>
+            <th>Items</th>
+            <th>OK</th>
+            <th>Failed</th>
+            <th>Rejected</th>
+            <th>Started</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for run in recent_runs %}
+        <tr>
+            <td>{{ run.run_id }}</td>
+            <td>{{ run.mode }}</td>
+            <td>{{ run.label or '-' }}</td>
+            <td><span class="badge badge-{{ run.status }}">{{ run.status }} ({{ run.status_code }})</span></td>
+            <td>{{ run.total_items }}</td>
+            <td>{{ run.succeeded }}</td>
+            <td>{{ run.failed }}</td>
+            <td>{{ run.rejected }}</td>
+            <td>{{ run.started_at[:19] if run.started_at else '-' }}</td>
+            <td><a href="/runs/{{ run.run_id }}">View</a></td>
+            <td>
+                {% if run.status in ['completed', 'failed'] %}
+                <button class="btn btn-sm btn-danger" onclick="removeDashboardRun({{ run.run_id }})">Remove</button>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="muted">No runs yet. Start one above.</p>
+{% endif %}

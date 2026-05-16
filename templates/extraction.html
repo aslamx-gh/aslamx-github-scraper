@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Extraction — GitHub Cloner V1{% endblock %}
+{% block content %}
+<h1>Extraction</h1>
+
+<section class="card">
+    <h2>Summary</h2>
+    <div class="run-stats" style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;">
+        <span>Repos extracted: <strong>{{ summary.repos_with_chunks }}</strong></span>
+        <span>Total chunks: <strong>{{ summary.total_chunks }}</strong></span>
+        <span>Included files: <strong>{{ summary.total_included_files }}</strong></span>
+        {% for band in ['very-high', 'high', 'medium', 'small'] %}
+        {% if summary.band_counts.get(band) %}
+        <span class="badge badge-{{ band }}">{{ band }}: {{ summary.band_counts[band] }}</span>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <div style="margin-top:1rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+        {% for status, cnt in snapshot_status_counts.items() %}
+        <span>{{ status }}: <strong>{{ cnt }}</strong> snapshots</span>
+        {% endfor %}
+    </div>
+
+    {% if snapshot_status_counts.get('pending', 0) > 0 %}
+    <div style="margin-top:1rem;">
+        <button class="btn btn-primary" onclick="runBackfill(this)">
+            Run Pending Extraction ({{ snapshot_status_counts.pending }} snapshots)
+        </button>
+        <span id="backfill-msg" class="msg" style="margin-left:0.75rem;"></span>
+    </div>
+    {% else %}
+    <div style="margin-top:1rem;color:var(--text-muted);font-size:0.9rem;">
+        No pending snapshots — all repos have been processed.
+    </div>
+    {% endif %}
+</section>
+
+{% if repos %}
+<section class="card">
+    <h2>Repos ({{ repos | length }})</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Repo</th>
+                <th>Extraction</th>
+                <th>Chunks</th>
+                <th>Files (incl.)</th>
+                <th>very-high</th>
+                <th>high</th>
+                <th>medium</th>
+                <th>small</th>
+                <th>Snapshot</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in repos %}
+            <tr>
+                <td><a href="/extraction/{{ r.repo_id }}">{{ r.full_name }}</a></td>
+                <td><span class="badge badge-{{ r.extraction_status }}">{{ r.extraction_status }}</span></td>
+                <td>{{ r.chunk_count }}</td>
+                <td>{{ r.included_file_count }} / {{ r.file_count }}</td>
+                <td>{{ r.bands.get('very-high', 0) }}</td>
+                <td>{{ r.bands.get('high', 0) }}</td>
+                <td>{{ r.bands.get('medium', 0) }}</td>
+                <td>{{ r.bands.get('small', 0) }}</td>
+                <td>{{ r.snapshot_id }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% else %}
+<section class="card">
+    <p>No extraction data yet. Use <strong>Run Pending Extraction</strong> above to process existing cloned repos, or run a new clone.</p>
+</section>
+{% endif %}
+
+<script>
+async function runBackfill(btn) {
+    btn.disabled = true;
+    const msg = document.getElementById('backfill-msg');
+    msg.textContent = 'Queuing…';
+    msg.style.color = 'var(--text-muted)';
+    try {
+        const res = await fetch('/api/extraction/backfill', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'queued') {
+            msg.textContent = `Extraction queued for ${data.pending_snapshots} snapshots. Refresh in a moment.`;
+            msg.style.color = 'var(--success)';
+        } else if (data.status === 'nothing_to_do') {
+            msg.textContent = 'No pending snapshots found.';
+            msg.style.color = 'var(--text-muted)';
+            btn.disabled = false;
+        } else {
+            msg.textContent = JSON.stringify(data);
+            btn.disabled = false;
+        }
+    } catch (e) {
+        msg.textContent = 'Request failed: ' + e;
+        msg.style.color = 'var(--danger)';
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}

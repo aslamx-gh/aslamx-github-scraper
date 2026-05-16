@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Schedules — GitHub Cloner V1{% endblock %}
+{% block content %}
+<h1>Schedules</h1>
+
+<div class="card">
+    <p>Scheduler: <span class="badge {% if scheduler_running %}badge-succeed{% else %}badge-failed{% endif %}">
+        {{ 'Running' if scheduler_running else 'Stopped' }}
+    </span></p>
+</div>
+
+<section class="card">
+    <h2>New Schedule</h2>
+    <form onsubmit="createSchedule(event)">
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" id="sched-name" placeholder="e.g. Nightly Python scan" required>
+        </div>
+        <div class="form-group">
+            <label>Cron Expression</label>
+            <input type="text" id="sched-cron" placeholder="0 2 * * *" required>
+            <small>Presets:
+                <a href="#" onclick="document.getElementById('sched-cron').value='0 * * * *';return false">Hourly</a> |
+                <a href="#" onclick="document.getElementById('sched-cron').value='0 2 * * *';return false">Daily 2am</a> |
+                <a href="#" onclick="document.getElementById('sched-cron').value='0 2 * * 1';return false">Weekly Mon 2am</a>
+            </small>
+        </div>
+        <div class="form-group">
+            <label>Niches</label>
+            {% for n in niches %}
+            <label class="checkbox-inline">
+                <input type="checkbox" name="sched-niches" value="{{ n.niche_id }}"> {{ n.title }}
+            </label>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            <label><input type="checkbox" id="sched-enabled"> Enabled</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Schedule</button>
+        <div id="sched-result" class="msg"></div>
+    </form>
+</section>
+
+{% if schedules %}
+<section class="card">
+    <h2>Existing Schedules</h2>
+    <table class="table">
+        <thead>
+            <tr><th>ID</th><th>Name</th><th>Cron</th><th>Niches</th><th>Enabled</th><th>Last Run</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for s in schedules %}
+            <tr>
+                <td>{{ s.schedule_id }}</td>
+                <td>{{ s.name }}</td>
+                <td><code>{{ s.cron_expression }}</code></td>
+                <td>{{ s.niche_ids if s.niche_ids is iterable and s.niche_ids is not string else s.niche_ids }}</td>
+                <td>
+                    <button class="btn btn-sm {% if s.enabled %}btn-success{% else %}btn-muted{% endif %}"
+                            onclick="toggleSchedule({{ s.schedule_id }}, {{ 'false' if s.enabled else 'true' }})">
+                        {{ 'Yes' if s.enabled else 'No' }}
+                    </button>
+                </td>
+                <td>{{ s.last_run_at[:19] if s.last_run_at else 'Never' }}</td>
+                <td><button class="btn btn-sm btn-danger" onclick="deleteSchedule({{ s.schedule_id }})">Delete</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endif %}
+{% endblock %}

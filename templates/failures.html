@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Failures & Rejections — GitHub Cloner V1{% endblock %}
+{% block content %}
+<h1>Failures & Rejections</h1>
+
+<section class="card">
+    <h2>Recent Failures ({{ failures|length }})</h2>
+    {% if failures %}
+    <table class="table">
+        <thead>
+            <tr><th>Run</th><th>Repo</th><th>Type</th><th>Message</th><th>Retryable</th><th>Time</th></tr>
+        </thead>
+        <tbody>
+            {% for f in failures %}
+            <tr>
+                <td><a href="/runs/{{ f.run_id }}">{{ f.run_id }}</a></td>
+                <td>{{ f.repo_full_name or '-' }}</td>
+                <td><code>{{ f.error_type }}</code></td>
+                <td>{{ f.error_message }}</td>
+                <td>{{ 'Yes' if f.is_retryable else 'No' }}</td>
+                <td>{{ f.created_at[:19] if f.created_at else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No failures recorded.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h2>Recent Rejections ({{ rejections|length }})</h2>
+    {% if rejections %}
+    <table class="table">
+        <thead>
+            <tr><th>Run</th><th>Repo</th><th>Niche</th><th>Reason</th><th>Explanation</th><th>Time</th></tr>
+        </thead>
+        <tbody>
+            {% for r in rejections %}
+            <tr>
+                <td><a href="/runs/{{ r.run_id }}">{{ r.run_id }}</a></td>
+                <td>{{ r.repo_full_name }}</td>
+                <td>{{ r.source_niche or '-' }}</td>
+                <td><code>{{ r.reason_code }}</code></td>
+                <td>{{ r.explanation }}</td>
+                <td>{{ r.created_at[:19] if r.created_at else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No rejections recorded.</p>
+    {% endif %}
+</section>
+{% endblock %}

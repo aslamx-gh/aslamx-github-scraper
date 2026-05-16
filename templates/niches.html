@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Niches — GitHub Cloner V1{% endblock %}
+{% block content %}
+<h1>Niches</h1>
+
+<section class="card">
+    <h2>Create New Niche</h2>
+    <form onsubmit="createNiche(event)">
+        <div class="form-group">
+            <label>Niche ID (filesystem-safe, no spaces)</label>
+            <input type="text" id="niche-id" placeholder="e.g. rust-web-frameworks" required>
+        </div>
+        <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="niche-title" placeholder="e.g. Rust Web Frameworks" required>
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="niche-desc" placeholder="e.g. Popular Rust web frameworks and tooling">
+        </div>
+        <div class="form-group">
+            <label>Languages (comma-separated)</label>
+            <input type="text" id="niche-langs" placeholder="e.g. Rust,Go,Python">
+        </div>
+        <div class="form-group">
+            <label>GitHub Search Queries (one per line)</label>
+            <textarea id="niche-queries" rows="3" placeholder="rust web framework&#10;rust async web"></textarea>
+        </div>
+        <div class="form-group">
+            <label>GitHub Topics (comma-separated)</label>
+            <input type="text" id="niche-topics" placeholder="e.g. rust,web,async">
+        </div>
+        <div class="form-group">
+            <label>Min Stars</label>
+            <input type="number" id="niche-min-stars" value="0">
+        </div>
+        <div class="form-group">
+            <label>Max Repo Size (KB)</label>
+            <input type="number" id="niche-max-size" value="512000">
+        </div>
+        <div class="form-group">
+            <label>Min Recent Activity (days, 0 = disabled)</label>
+            <input type="number" id="niche-min-activity" value="0">
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="niche-exclude-forks" checked> Exclude Forks
+            </label>
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="niche-enabled" checked> Enabled
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Niche</button>
+        <div id="niche-create-msg" class="msg"></div>
+    </form>
+</section>
+
+{% if niches %}
+<section class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Languages</th>
+                <th>Queries</th>
+                <th>Stars</th>
+                <th>Max Size</th>
+                <th>Enabled</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for n in niches %}
+            <tr>
+                <td><code>{{ n.niche_id }}</code></td>
+                <td>{{ n.title }}</td>
+                <td>{{ n.languages if n.languages is iterable and n.languages is not string else n.languages }}</td>
+                <td>{{ n.github_search_queries|length if n.github_search_queries is iterable and n.github_search_queries is not string else '-' }}</td>
+                <td>{{ n.min_stars }}</td>
+                <td>{{ n.max_repo_size_kb }} KB</td>
+                <td>
+                    <button class="btn btn-sm {% if n.enabled %}btn-success{% else %}btn-muted{% endif %}"
+                            onclick="toggleNiche('{{ n.niche_id }}', {{ 'false' if n.enabled else 'true' }})">
+                        {{ 'Enabled' if n.enabled else 'Disabled' }}
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% else %}
+<p class="muted">No niches configured. Add YAML files to <code>config/niches/</code>.</p>
+{% endif %}
+{% endblock %}
